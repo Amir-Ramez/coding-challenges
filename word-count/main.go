@@ -8,7 +8,8 @@ import (
 )
 
 func main() {
-	countBytes := flag.Bool("c", false, "Output number of bytes in a file")
+	countBytes := flag.Bool("c", false, "count bytes")
+	countLines := flag.Bool("l", false, "count lines")
 	flag.Parse()
 
 	args := flag.Args()
@@ -25,12 +26,21 @@ func main() {
 	}
 	defer file.Close()
 
-	var bytesCount int64
+	var (
+		bytesCount int64
+		linesCount int64
+	)
 
 	buf := make([]byte, 32*1024)
 	for {
 		n, err := file.Read(buf)
 		bytesCount += int64(n)
+
+		for i := range n {
+			if buf[i] == '\n' {
+				linesCount++
+			}
+		}
 
 		if err == io.EOF {
 			break
@@ -42,7 +52,17 @@ func main() {
 		}
 	}
 
+	counts := make([]int64, 0)
 	if *countBytes {
-		fmt.Println(bytesCount, fileName)
+		counts = append(counts, bytesCount)
 	}
+	if *countLines {
+		counts = append(counts, linesCount)
+	}
+
+	for _, count := range counts {
+		fmt.Printf("%d ", count)
+	}
+
+	fmt.Println(fileName)
 }
