@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"unicode"
 	"unicode/utf8"
 )
 
@@ -12,6 +13,7 @@ func main() {
 	countBytes := flag.Bool("c", false, "count bytes")
 	countLines := flag.Bool("l", false, "count lines")
 	countChars := flag.Bool("m", false, "count characters")
+	countWords := flag.Bool("w", false, "count words")
 	flag.Parse()
 
 	args := flag.Args()
@@ -32,24 +34,29 @@ func main() {
 		bytesCount int64
 		linesCount int64
 		charsCount int64
+		wordsCount int64
 	)
 
 	buf := make([]byte, 32*1024)
-	var leftOver []byte
+
+	var (
+		leftover []byte
+		inWord   = false
+	)
 	for {
 		n, err := file.Read(buf)
 
 		data := buf[:n]
-		if len(leftOver) > 0 {
-			data = append(leftOver, data...)
-			leftOver = nil
+		if len(leftover) > 0 {
+			data = append(leftover, data...)
+			leftover = nil
 		}
 
 		bytesCount += int64(n)
 
 		for len(data) > 0 {
 			if !utf8.FullRune(data) {
-				leftOver = append(leftOver, data...)
+				leftover = append(leftover, data...)
 				break
 			}
 
@@ -58,6 +65,13 @@ func main() {
 
 			if r == '\n' {
 				linesCount++
+			}
+
+			if unicode.IsSpace(r) {
+				inWord = false
+			} else if !inWord {
+				inWord = true
+				wordsCount++
 			}
 
 			data = data[size:]
@@ -82,6 +96,9 @@ func main() {
 	}
 	if *countChars {
 		counts = append(counts, charsCount)
+	}
+	if *countWords {
+		counts = append(counts, wordsCount)
 	}
 
 	for _, count := range counts {
