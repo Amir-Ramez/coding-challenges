@@ -16,19 +16,21 @@ func main() {
 	countWords := flag.Bool("w", false, "count words")
 	flag.Parse()
 
+	var input io.Reader
+
 	args := flag.Args()
 	if len(args) < 1 {
-		fmt.Fprintln(os.Stderr, "no file provided")
-		os.Exit(1)
-	}
+		input = os.Stdin
+	} else {
+		file, err := os.Open(args[0])
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		defer file.Close()
 
-	fileName := args[0]
-	file, err := os.Open(fileName)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		input = file
 	}
-	defer file.Close()
 
 	var (
 		bytesCount int64
@@ -44,7 +46,7 @@ func main() {
 		inWord   = false
 	)
 	for {
-		n, err := file.Read(buf)
+		n, err := input.Read(buf)
 
 		data := buf[:n]
 		if len(leftover) > 0 {
@@ -109,5 +111,7 @@ func main() {
 		fmt.Printf("%d ", count)
 	}
 
-	fmt.Println(fileName)
+	if input != os.Stdin {
+		fmt.Println(args[0])
+	}
 }
