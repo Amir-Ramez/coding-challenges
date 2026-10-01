@@ -101,6 +101,10 @@ func main() {
 		counts = append(counts, wordsCount)
 	}
 
+	if len(counts) == 0 {
+		counts = append(counts, linesCount, wordsCount, bytesCount)
+	}
+
 	for _, count := range counts {
 		fmt.Printf("%d ", count)
 	}
