@@ -38,6 +38,24 @@ func (p *Parser) parseObject() error {
 		return err
 	}
 
+	// empty object
+	if p.CurrentToken.tokenType == RBrace {
+		p.advance()
+		return nil
+	}
+
+	if err := p.expect(String); err != nil {
+		return err
+	}
+
+	if err := p.expect(Colon); err != nil {
+		return err
+	}
+
+	if err := p.expect(String); err != nil {
+		return err
+	}
+
 	if err := p.expect(RBrace); err != nil {
 		return err
 	}
