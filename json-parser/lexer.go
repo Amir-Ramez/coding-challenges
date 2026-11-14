@@ -16,7 +16,12 @@ const (
 	LBrace TokenType = iota
 	RBrace
 	String
+	Numeric
+	True
+	False
+	Null
 	Colon
+	Comma
 	EOF
 	Error
 )
@@ -134,6 +139,47 @@ func isHexDigit(c rune) bool {
 		(c >= 'a' && c <= 'f')
 }
 
+func (l *Lexer) readKeyword(value string, tokenType TokenType) Token {
+	for i := range len(value) {
+		if l.curChar != rune(value[i]) {
+			return l.errorToken(fmt.Errorf("invalid value"))
+		}
+
+		l.advance()
+	}
+
+	return Token{tokenType: tokenType, text: value}
+}
+
+func (l *Lexer) readNumber() Token {
+	value := make([]byte, 0)
+
+	if l.curChar == '-' {
+		value = append(value, byte(l.curChar))
+		l.advance()
+
+		if l.curChar < '0' || l.curChar > '9' {
+			return l.errorToken(fmt.Errorf("invalid number"))
+		}
+	}
+
+	if l.curChar == '0' {
+		value = append(value, byte(l.curChar))
+		l.advance()
+
+		if l.curChar >= '0' && l.curChar <= '9' {
+			return l.errorToken(fmt.Errorf("leading zeros are not allowed"))
+		}
+	} else {
+		for l.curChar >= '0' && l.curChar <= '9' {
+			value = append(value, byte(l.curChar))
+			l.advance()
+		}
+	}
+
+	return Token{tokenType: Numeric, text: string(value)}
+}
+
 func (l *Lexer) getNextToken() Token {
 	l.skipWhiteSpace()
 
@@ -147,20 +193,38 @@ func (l *Lexer) getNextToken() Token {
 
 	c := l.curChar
 
-	switch c {
-	case '{':
+	switch {
+	case c == '{':
 		l.advance()
 		return Token{tokenType: LBrace, text: "{"}
 
-	case '}':
+	case c == '}':
 		l.advance()
 		return Token{tokenType: RBrace, text: "}"}
 
-	case ':':
+	case c == ':':
 		l.advance()
 		return Token{tokenType: Colon, text: ":"}
-	case '"':
+
+	case c == '"':
 		return l.readString()
+
+	case c == ',':
+		l.advance()
+		return Token{tokenType: Comma, text: ","}
+
+	case c == 't':
+		return l.readKeyword("true", True)
+
+	case c == 'f':
+		return l.readKeyword("false", False)
+
+	case c == 'n':
+		return l.readKeyword("null", Null)
+
+	case (c >= '0' && c <= '9') || c == '-':
+		return l.readNumber()
+
 	default:
 		l.advance()
 		return Token{tokenType: Error, text: string(c)}

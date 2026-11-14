@@ -33,6 +33,23 @@ func (p *Parser) expect(want TokenType) error {
 	return nil
 }
 
+func (p *Parser) parseValue() error {
+	switch p.CurrentToken.tokenType {
+	case String:
+		return p.expect(String)
+	case Numeric:
+		return p.expect(Numeric)
+	case True:
+		return p.expect(True)
+	case False:
+		return p.expect(False)
+	case Null:
+		return p.expect(Null)
+	default:
+		return fmt.Errorf("expected value, got %v", p.CurrentToken.tokenType)
+	}
+}
+
 func (p *Parser) parseObject() error {
 	if err := p.expect(LBrace); err != nil {
 		return err
@@ -44,16 +61,22 @@ func (p *Parser) parseObject() error {
 		return nil
 	}
 
-	if err := p.expect(String); err != nil {
-		return err
-	}
+	for {
+		if err := p.expect(String); err != nil {
+			return err
+		}
 
-	if err := p.expect(Colon); err != nil {
-		return err
-	}
+		if err := p.expect(Colon); err != nil {
+			return err
+		}
 
-	if err := p.expect(String); err != nil {
-		return err
+		if err := p.parseValue(); err != nil {
+			return err
+		}
+
+		if err := p.expect(Comma); err != nil {
+			break
+		}
 	}
 
 	if err := p.expect(RBrace); err != nil {
