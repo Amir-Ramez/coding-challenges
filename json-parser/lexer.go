@@ -15,6 +15,8 @@ type TokenType int
 const (
 	LBrace TokenType = iota
 	RBrace
+	LBracket
+	RBracket
 	String
 	Numeric
 	True
@@ -224,6 +226,14 @@ func (l *Lexer) getNextToken() Token {
 
 	case (c >= '0' && c <= '9') || c == '-':
 		return l.readNumber()
+
+	case c == '[':
+		l.advance()
+		return Token{tokenType: LBracket, text: "["}
+
+	case c == ']':
+		l.advance()
+		return Token{tokenType: RBracket, text: "]"}
 
 	default:
 		l.advance()

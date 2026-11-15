@@ -45,6 +45,10 @@ func (p *Parser) parseValue() error {
 		return p.expect(False)
 	case Null:
 		return p.expect(Null)
+	case LBrace:
+		return p.parseObject()
+	case LBracket:
+		return p.parseArray()
 	default:
 		return fmt.Errorf("expected value, got %v", p.CurrentToken.tokenType)
 	}
@@ -80,6 +84,33 @@ func (p *Parser) parseObject() error {
 	}
 
 	if err := p.expect(RBrace); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (p *Parser) parseArray() error {
+	if err := p.expect(LBracket); err != nil {
+		return err
+	}
+
+	if p.CurrentToken.tokenType == RBracket {
+		p.advance()
+		return nil
+	}
+
+	for {
+		if err := p.parseValue(); err != nil {
+			return err
+		}
+
+		if err := p.expect(Comma); err != nil {
+			break
+		}
+	}
+
+	if err := p.expect(RBracket); err != nil {
 		return err
 	}
 
